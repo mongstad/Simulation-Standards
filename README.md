@@ -34,4 +34,4 @@ The [review gates](docs/REVIEW.md) still require scientific baseline comparisons
 
 **Governance:** Owner-directed review and publication. Public readability does not imply open contribution intake.
 
-**Licensing:** No repository license has been approved. CC BY 4.0 for documentation and MIT for future reference code are proposals only; exact scope, attribution and embedded-example treatment await owner approval. See the [licensing proposal](docs/PUBLICATION_READINESS.md#licensing-proposal--no-grant-made).
+**Licensing:** Original specification, documentation and embedded examples are licensed under [CC BY 4.0](LICENSE.md). Future separately designated standalone executable reference code is covered by [MIT](LICENSE-CODE). SimShelf and Wavez keep their own licenses.
