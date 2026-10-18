@@ -18,7 +18,7 @@ Apply integration gates only to profiles being claimed; Full requires both. Reco
 - [ ] Wavez: request an existing explicit `--wavez-file` destination (or equivalent); verify clear collision refusal, unchanged existing bytes, and no silently renamed output without documented opt-in. Distinguish collision errors from other filesystem failures; unique names do not guarantee I/O success.
 - [ ] Wavez: compare export enabled/disabled numerical state and RNG behavior; test export failure/partial-file handling and preserve independent scientific archives according to the documented policy.
 - [ ] Core and applicable integrations: verify independent backups of source and large referenced artifacts; reference-only records are not backups.
-- [ ] Resolve the [publication-readiness findings](PUBLICATION_READINESS.md), approve exact documentation/code licensing scope and notices, and review identifying history and remaining hosted surfaces before any separately authorized public-visibility change.
+- [ ] Review [publication-readiness findings](PUBLICATION_READINESS.md), verify the approved [documentation license](../LICENSE.md) and [MIT code license](../LICENSE-CODE), and review identifying history and remaining hosted surfaces before any separately authorized public-visibility change.
 - [ ] After successful reference test, owner reviews and authorizes v1.0 tag/publication.
 
 **Planned reference pilot:** One copied synthetic scalar simulation, kept separate from either application's required source tree. Keep both applications independent. Migrate historical sims only if and when selected for future runs. No pilot execution or migration is part of issue #1.
