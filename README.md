@@ -1,37 +1,32 @@
 # Simulation Standards
 
-**Reproducible experiments. Predictable outputs. Independent tools.**
+Simulation Standards documents the **Scientific Workflow Simulation Standard (SWSS)**, a voluntary workflow convention for people writing and maintaining Python scientific simulations.
 
-This repository documents the voluntary **Scientific Workflow Simulation Standard (SWSS)** for Python scientific simulations.
+SWSS helps make experiments easier to reproduce and review through source versioning, predictable output directories, logs and provenance—the record of how a result was produced. It also defines optional integrations for recording runs and visualizing simulation data, while keeping the numerical model authoritative.
 
-**Status:** SWSS v1.0 is a draft for owner review, not a ratified or independently certified standard.
+**Status:** SWSS v1.0 is a **Draft** for owner review, not a ratified industry standard or certification of an implementation.
 
-- [Read the single authoritative SWSS v1.0 draft](standards/SWSS/v1.0.md)
-- [Review and validation gates](docs/REVIEW.md)
-- [Draft consolidation decisions and contract review](docs/SWSS_V1_RECONCILIATION.md)
-- [Publication readiness, audit findings and proposed licensing](docs/PUBLICATION_READINESS.md)
+## Choose a profile
 
-## Modular adoption
-
-| Profile | Goal | Software required |
+| Profile | What it covers | Software required |
 | --- | --- | --- |
-| Core | Scientific versions, reproducibility, logs and lifecycle | Neither application |
-| SimShelf | Optional run recording, progress, metrics and automatic file capture | SimShelf |
-| Wavez | Optional WVZ1 export and validation | Wavez |
-| Full | Core plus both integrations | Both |
+| **Core** | Versioning, reproducibility, logs, provenance and truthful run status | Neither application |
+| **SimShelf** | Core plus run recording, progress, metrics and automatic file capture with SimShelf | SimShelf |
+| **Wavez** | Core plus WVZ1 simulation recordings and validation for the Wavez viewer | Wavez |
+| **Full** | Core plus both integrations | SimShelf and Wavez |
 
-Wavez and SimShelf are independent software products. Their APIs and file contracts are authoritative in their respective repositories. SWSS does not prescribe dependencies for either application.
+SimShelf organizes simulation runs and their evidence; Wavez visualizes exported simulation data. They are independent applications: adopting either integration does not require the other. Each application's own documentation governs its APIs and file formats.
 
-Existing scientific simulations need not be migrated until they are selected for future work. Scientific results must not be silently altered merely to meet workflow conventions.
+## Get started
 
-## Pilot evidence and validation status
+1. Read the [authoritative SWSS v1.0 draft](standards/SWSS/v1.0.md) and choose the profile that fits your workflow.
+2. Apply the relevant requirements to a new simulation or one selected for future work. Document parameters, source identity and outputs without silently changing scientific behavior.
+3. Use the [review and validation gates](docs/REVIEW.md) to check the profiles you claim and record any deviations or untested behavior.
 
-[Issue #6](https://github.com/mongstad/Simulation-Standards/issues/6) reports a workflow observation from VB Vacuum Collapse Recirculator v0.4.3: the default `case_D.wvz` name could collide on a repeated run. This informed the draft's unique-capture naming rules; it is not evidence of scientific correctness, full compatibility or SWSS conformance. No pilot artifacts or completed conformance report are tracked here.
+Existing simulations can be adopted one at a time; no mass migration is required. Application integration references are collected in the [specification](standards/SWSS/v1.0.md#6-authoritative-references).
 
-The [review gates](docs/REVIEW.md) still require scientific baseline comparisons, automatic log capture, progress/metric checks, failure/cancellation, WVZ1 readback/viewer checks, repeated-run collision tests and backup evidence. The synthetic reference implementation remains future work. No implementation is certified by this repository.
+## Licensing and governance
 
-**Publication:** The repository remains private during the readiness review. Publication requires a separate owner decision after reviewing the [audit and blockers](docs/PUBLICATION_READINESS.md).
+Original specification, documentation and embedded examples are licensed under [CC BY 4.0](LICENSE.md). Future standalone executable reference code is covered by [MIT](LICENSE-CODE) only when explicitly designated and marked as such. SimShelf and Wavez retain their own licenses.
 
-**Governance:** Owner-directed review and publication. Public readability does not imply open contribution intake.
-
-**Licensing:** Original specification, documentation and embedded examples are licensed under [CC BY 4.0](LICENSE.md). Future separately designated standalone executable reference code is covered by [MIT](LICENSE-CODE). SimShelf and Wavez keep their own licenses.
+Development and publication are owner-directed. Public readability does not imply open contribution intake.
