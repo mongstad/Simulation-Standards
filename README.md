@@ -6,8 +6,9 @@ This repository documents the voluntary **Scientific Workflow Simulation Standar
 
 **Status:** SWSS v1.0 is a draft for owner review, not a ratified or independently certified standard.
 
-- [Read SWSS v1.0 draft](standards/SWSS/v1.0.md)
+- [Read the single authoritative SWSS v1.0 draft](standards/SWSS/v1.0.md)
 - [Review and validation gates](docs/REVIEW.md)
+- [Draft consolidation decisions and contract review](docs/SWSS_V1_RECONCILIATION.md)
 
 ## Modular adoption
 
