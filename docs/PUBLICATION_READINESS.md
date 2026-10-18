@@ -10,9 +10,9 @@ The [single specification](../standards/SWSS/v1.0.md), [README](../README.md), [
 
 The [runtime gates](REVIEW.md) remain unchecked: scientific baseline and RNG preservation, automatic log capture, progress and metrics, failure/cancellation, concurrent outputs, WVZ1 numerical readback/viewer inspection, repeated captures/collision refusal and backup verification still need recorded evidence. No runtime tests were performed under issue #8. The proposed synthetic reference implementation remains future work; the reported external pilot does not establish that reference implementation or conformance.
 
-## Licensing proposal — no grant made
+## Licensing — owner-approved choices
 
-These are alternatives for owner decision, not operative license terms. No LICENSE file, license header or definitive grant is added by this review.
+**Update (2026-10-18):** The owner approved CC BY 4.0 for documentation and MIT for future executable reference code. See the subsequently added [documentation license](../LICENSE.md) and [MIT reference-code license](../LICENSE-CODE). The remainder of this section records the earlier assessment and historical decision points; it is not a current claim that licensing is pending.
 
 | Candidate scope | Proposal and implications | Alternative / decision |
 | --- | --- | --- |
@@ -52,9 +52,9 @@ Coverage: all **5 tracked files**, **12 reachable commits**, **41 reachable Git 
 
 Checks passed for **21 relative links/anchors**, **15 GitHub file/tree targets**, fenced blocks, historical UTF-8 text and whitespace. Reviewed draft/profile terminology and documentation-only scope. The reference checkouts matched remote main: SimShelf `1aceecb3febf6e8e193fdc99d756ed345820d83c` and Wavez `681a46f8f8473ee6b5323ec4af71ada883183077`. Official licensing references were read on the review date. Technical references were checked against application Git objects; this verifies file targets, not anonymous-reader access after a future visibility change. Existing historical evidence remains historical; no runtime gates are marked complete.
 
-Publication remains blocked pending owner decisions and evidence:
+Publication remains subject to owner decisions and evidence:
 
-- Approve exact licensing scope and notices, then authorize their implementation separately.
+- Licensing choice and initial scopes were approved and implemented; verify copyright attribution and any later additions or exceptions before public launch.
 - Resolve identifying metadata/project-name exposure and audit remaining hosted surfaces; approve any necessary remediation before it is attempted.
 - Supply or explicitly disposition pending runtime evidence and permitted claims. An owner-authorized draft publication must still disclose untested behavior; ratification requires its separate gates.
 - Review the final PR and any intervening changes, verify intended readers can access references, and recheck private visibility before a separately authorized visibility change.
