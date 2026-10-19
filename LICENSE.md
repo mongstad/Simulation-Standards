@@ -12,4 +12,4 @@ You may share and adapt this material, including commercially, subject to the co
 
 **Executable reference code** placed in designated code/template directories and explicitly marked as MIT-licensed is instead covered by [LICENSE-CODE](LICENSE-CODE). No standalone executable reference code is included by this licensing change. Short embedded examples in Markdown remain CC BY 4.0 unless explicitly marked otherwise.
 
-Third-party materials and external repositories, including SimShelf and Wavez, retain their own licenses. Linking to them does not relicense their content. Trademarks and names are not separately licensed by this notice.
+Third-party materials and external repositories retain their own licenses. Linking to them does not relicense their content. Trademarks and names are not separately licensed by this notice.
