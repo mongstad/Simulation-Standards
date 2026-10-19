@@ -1,31 +1,24 @@
 # Simulation Standards
 
-Simulation Standards documents the **Scientific Workflow Simulation Standard (SWSS)**, a voluntary workflow convention for people writing and maintaining Python scientific simulations.
+Simulation Standards defines the **Scientific Workflow Simulation Standard (SWSS)**, an independent, voluntary standard for scientific simulation workflows.
 
-SWSS helps make experiments easier to reproduce and review through source versioning, predictable output directories, logs and provenance—the record of how a result was produced. It also defines optional integrations for recording runs and visualizing simulation data, while keeping the numerical model authoritative.
+SWSS supports reproducible experiments through source versioning, exact arguments, isolated outputs, logs, provenance and truthful run status. Simulations remain independently executable and authoritative for their scientific behavior. Developers are free to adopt or ignore the standard.
 
-## Choose a profile
+## Baseline and optional capabilities
 
-| Profile | What it covers | Software required |
-| --- | --- | --- |
-| **Core** | Versioning, reproducibility, logs, provenance and truthful run status | Neither application |
-| **SimShelf** | Core plus run recording, progress, metrics and automatic file capture with SimShelf | SimShelf |
-| **Wavez** | Core plus WVZ1 simulation recordings and validation for the Wavez viewer | Wavez |
-| **Full** | Core plus both integrations | SimShelf and Wavez |
+The baseline protects scientific integrity. Independent optional capabilities cover coordinated run capture, progress and metrics, scientific exports, and portable parameter editing. No particular application, library or binary format is required.
 
-SimShelf organizes simulation runs and their evidence; Wavez visualizes exported simulation data. They are independent applications: adopting either integration does not require the other. Each application's own documentation governs its APIs and file formats.
+Participating configurations use one `swss.toml`: portable metadata and optional parameter declarations live under `swss`; bounded optional extension data cannot override that contract.
 
 ## Get started
 
-1. Read the [authoritative SWSS v1.1 specification](standards/SWSS/v1.1.md) and choose the profile that fits your workflow.
-2. Apply the relevant requirements to a new simulation or one selected for future work. Document parameters, source identity and outputs without silently changing scientific behavior.
+1. Read the [SWSS v2.0 specification](standards/SWSS/v2.0.md) and identify the baseline and optional capabilities you intend to claim.
+2. Apply and validate those requirements for a simulation selected for future work, preserving scientific behavior and historical evidence.
 
-Existing simulations can be adopted one at a time; no mass migration is required. Application integration references are collected in the [specification](standards/SWSS/v1.1.md#7-authoritative-references).
-
-SWSS 1.1 defines optional portable parameters in a single `swss.toml`. SimShelf adoption requires separately authorized application work; this specification does not claim that consumer support or conformance testing is complete.
+v2.0 replaces the earlier profile taxonomy and uses portable schema 2. Its text is submitted for owner review; no release, ratification, external implementation or scientific certification is claimed. Portable additions are specified here first, then implemented by adopting tools.
 
 ## Licensing and governance
 
-Original specification, documentation and embedded examples are licensed under [CC BY 4.0](LICENSE.md). Future standalone executable reference code is covered by [MIT](LICENSE-CODE) only when explicitly designated and marked as such. SimShelf and Wavez retain their own licenses.
+Original specification, documentation and embedded examples are licensed under [CC BY 4.0](LICENSE.md). Future standalone executable reference code is covered by [MIT](LICENSE-CODE) only when explicitly designated and marked as such. Third-party material retains its own licenses.
 
 Development and publication are owner-directed. Public readability does not imply open contribution intake.
