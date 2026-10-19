@@ -17,10 +17,12 @@ SimShelf organizes simulation runs and their evidence; Wavez visualizes exported
 
 ## Get started
 
-1. Read the [authoritative SWSS v1.0 specification](standards/SWSS/v1.0.md) and choose the profile that fits your workflow.
+1. Read the [authoritative SWSS v1.1 specification](standards/SWSS/v1.1.md) and choose the profile that fits your workflow.
 2. Apply the relevant requirements to a new simulation or one selected for future work. Document parameters, source identity and outputs without silently changing scientific behavior.
 
-Existing simulations can be adopted one at a time; no mass migration is required. Application integration references are collected in the [specification](standards/SWSS/v1.0.md#6-authoritative-references).
+Existing simulations can be adopted one at a time; no mass migration is required. Application integration references are collected in the [specification](standards/SWSS/v1.1.md#7-authoritative-references).
+
+SWSS 1.1 defines optional portable parameters in a single `swss.toml`. SimShelf adoption requires separately authorized application work; this specification does not claim that consumer support or conformance testing is complete.
 
 ## Licensing and governance
 

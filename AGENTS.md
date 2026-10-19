@@ -5,7 +5,7 @@ This repository documents voluntary scientific simulation workflow conventions. 
 ## Scope and sources of truth
 
 - Keep the SWSS **Core** profile application-independent. SimShelf and Wavez are optional, separate integrations; never make either application depend on the other.
-- The intended authoritative SWSS v1.0 specification is `standards/SWSS/v1.0.md`. Until owner-approved, it is a **draft**, not a ratified or validated industry standard.
+- The current normative SWSS specification is `standards/SWSS/v1.1.md`. Keep `v1.0.md` and past proposals/evidence unchanged as historical records. Specification acceptance does not imply implemented consumers, industry certification or scientific validation.
 - SimShelf's own documentation and source govern its capture, progress, metrics and version behavior. Wavez's own documentation and source govern WVZ1, export, scene reading and visualization. Verify claims against current contracts; distinguish supported functionality, required configuration, proposed conventions and untested assumptions.
 - Avoid duplicating the entire specification in README, reviews or agent instructions. Keep links and terminology consistent.
 - Never silently change scientific methods, numerical results, units, provenance or validation claims.
