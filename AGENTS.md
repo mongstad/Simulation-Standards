@@ -1,10 +1,10 @@
 # Agent instructions
 
-This repository documents voluntary scientific simulation workflow conventions. These instructions apply to AI agents working here, alongside the owner's assigned issue.
+This repository documents scientific simulation workflow conventions. These instructions apply to AI agents working here, alongside the owner's assigned issue.
 
 ## Scope and sources of truth
 
-- SWSS is one independent, voluntary scientific workflow standard with a baseline and optional capabilities. No application-specific profiles, namespaces, APIs or formats belong in its portable requirements.
+- SWSS is one independent, scientific workflow standard with a baseline and optional capabilities. No application-specific profiles, namespaces, APIs or formats belong in its portable requirements.
 - The current specification text is `standards/SWSS/v2.0.md`, submitted for owner review. Earlier tracked versions are archival summaries; original text remains in Git history. Do not rewrite commit/tag history or external scientific records. Specification acceptance does not imply implemented consumers or certification.
 - Propose and review portable additions to `swss.toml` or shared workflow contracts here first, then implement the accepted contract in adopting repositories with separate authorization. Consumer-specific details may remain local but cannot silently alter SWSS semantics. Developers may adopt or ignore SWSS.
 - Keep normative requirements self-contained. External format/API documentation governs only the adapter or format selected by an implementation; it cannot silently change SWSS obligations.
