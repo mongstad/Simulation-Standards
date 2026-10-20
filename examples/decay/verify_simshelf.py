@@ -14,6 +14,7 @@ def main():
     from simshelf.api import create_app
     from simshelf.store import Store
     from simshelf.source import blob_path
+    from simshelf.capture import preview
     from simshelf._version import __version__
     source = Path(__file__).resolve().parent
     with tempfile.TemporaryDirectory(prefix='swss-consumer-') as temp:
@@ -25,7 +26,7 @@ def main():
         original = (root / 'swss.toml').read_bytes()
         argv = ['-k', '1e-1', '-n', '0010', '--label', '', '--no-series']
         config = {'interpreter': sys.executable, 'cwd': '.', 'arguments': argv,
-                  'output_dir': 'outputs', 'output_policy': 'fixed'}
+                  'output_dir': 'outputs/fixed', 'output_policy': 'fixed'}
         with TestClient(create_app(store.path)) as client:
             auth = {'X-SimShelf-Token': client.get('/api/workspace').json()['token']}
             discovery = client.get(base + '/parameters').json()
@@ -49,29 +50,73 @@ def main():
         with TestClient(create_app(store.path)) as client:
             auth = {'X-SimShelf-Token': client.get('/api/workspace').json()['token']}
             assert client.get(base + '/parameters').json()['fingerprint'] == discovery['fingerprint']
-            response = client.post(base + '/launch', headers=auth, json=config)
-            assert response.status_code == 201, response.text
-            run_id = response.json()['run_id']
-            deadline = time.monotonic() + 20
-            while time.monotonic() < deadline:
-                run = store.run(run_id)
-                if run['status'] != 'running':
-                    break
-                time.sleep(.05)
-            assert run['status'] == 'completed', run
-            assert run['command'][2:] == argv
-            evidence = run['parameter_metadata']
-            assert evidence['argv'] == argv
-            assert evidence['provenance']['bytes_utf8'].encode() == original
-            run_root, = (root / 'outputs').iterdir()
-            provenance = json.loads((run_root/'provenance.json').read_text())
-            assert provenance['argv'] == argv and provenance['simulation_version'] == '0.1.0'
-            assert run['version'] == 'unversioned'  # Consumer-specific version-tag limitation.
-            copied = [a for a in run['artifacts'] if a['policy'] == 'copy']
-            assert any(a['name'].endswith('.log') for a in copied), run
-            for artifact in copied:
-                actual = root / 'outputs' / artifact['name']
-                assert blob_path(store.path, artifact['blob']).read_bytes() == actual.read_bytes()
+            (root/'outputs/fixed').mkdir(parents=True)
+            results = []
+            prior_bytes = {}
+
+            def launch(settings):
+                response = client.post(base + '/launch', headers=auth, json=settings)
+                assert response.status_code == 201, response.text
+                return response.json()['run_id']
+
+            def verify(run_id, settings):
+                deadline = time.monotonic() + 20
+                while time.monotonic() < deadline:
+                    run = store.run(run_id)
+                    if run['status'] != 'running':
+                        break
+                    time.sleep(.05)
+                assert run['status'] == 'completed', run
+                assert run['capture_status'] == 'complete' and not run['capture_errors'], run
+                actual_argv = settings['arguments']
+                assert run['command'][2:] == actual_argv
+                evidence = run['parameter_metadata']
+                assert evidence['argv'] == actual_argv
+                assert evidence['provenance']['bytes_utf8'].encode() == original
+                run_root = root / run['capture_config']['output_dir']
+                if settings['output_policy'] == 'per_run':
+                    assert run_root.parent == root/'outputs'
+                    assert run_root.name == 'run_' + run_id
+                assert not any(p.is_dir() for p in run_root.iterdir()), run_root
+                provenance = json.loads((run_root/'provenance.json').read_text())
+                assert provenance['argv'] == actual_argv and provenance['simulation_version'] == '0.1.1'
+                assert provenance['output_directory'] == str(run_root)
+                assert provenance['output_allocation'] == 'coordinated'
+                assert run['version'] == 'unversioned'  # Consumer-specific version-tag limitation.
+                expected = {'summary.json', 'provenance.json', next(run_root.glob('*.log')).name}
+                if '--no-series' not in actual_argv:
+                    expected.add('measurements.csv')
+                copied = [a for a in run['artifacts'] if a['policy'] == 'copy']
+                assert {a['name'] for a in copied} == expected, run['artifacts']
+                eligibility = preview({**sim, 'config': run['capture_config']})
+                assert not eligibility['errors']
+                assert all(f['action'] == 'copy' and f['reason'] is None
+                           for f in eligibility['files'] if f['path'] in expected)
+                for artifact in copied:
+                    assert blob_path(store.path, artifact['blob']).read_bytes() == (run_root/artifact['name']).read_bytes()
+                logdir = store.path/'logs'/run_id
+                assert str(run_root) in (logdir/'stdout.log').read_text()
+                assert (logdir/'stderr.log').is_file()
+                paths = {f['path'] for f in run['snapshot']['files']}
+                assert {'simulate.py', 'swss.toml'} <= paths
+                assert not any(p.startswith('outputs/') for p in paths)
+                for path, data in prior_bytes.items():
+                    assert path.read_bytes() == data
+                prior_bytes.update({p: p.read_bytes() for p in run_root.iterdir()})
+                results.append({'policy': settings['output_policy'], 'copied_artifacts': len(copied),
+                                'status': run['status'], 'capture_status': run['capture_status']})
+                return run_root
+
+            verify(launch(config), config)
+            # Two launches before waiting, plus a successive run without the CSV.
+            coordinated = {**config, 'output_policy': 'per_run', 'output_dir': 'outputs',
+                           'arguments': argv[:-1]}
+            ids = [launch(coordinated) for _ in range(2)]
+            roots = [verify(ident, coordinated) for ident in ids]
+            assert roots[0] != roots[1]
+            assert (roots[0]/'measurements.csv').read_bytes() == (roots[1]/'measurements.csv').read_bytes()
+            no_series = {**coordinated, 'arguments': argv}
+            verify(launch(no_series), no_series)
             # Invalid metadata and stale binding both leave the saved argv usable manually.
             for bad in (original + b'\n[swss]\n', original.replace(b'sha256 = "', b'sha256 = "0', 1)):
                 (root/'swss.toml').write_bytes(bad)
@@ -86,12 +131,14 @@ def main():
             stale = client.get(base + '/parameters').json()
             assert not stale['parameters'] and stale['provenance']['binding_status'] == 'stale / manual-only'
         print(json.dumps({'consumer': 'SimShelf', 'version': __version__, 'rows': len(rows),
-                          'status': run['status'], 'copied_artifacts': len(copied),
+                          'runs': results,
                           'checks': ['defaults', 'save/reopen', 'exact argv', 'metadata provenance',
-                                     'copied artifact bytes', 'manual fallback', 'stale binding'],
+                                     'direct coordinated output', 'capture eligibility', 'copied artifact bytes',
+                                     'separate stdout/stderr', 'source snapshot exclusions',
+                                     'manual fallback', 'stale binding'],
                           'limits': ['API only; no browser UI verification',
-                                     'consumer version label is unversioned; simulation provenance retains 0.1.0',
-                                     'fixed capture; coordinated capture not claimed']}))
+                                     'consumer version label is unversioned; simulation provenance retains 0.1.1',
+                                     'fixed directory precreated; repeated use must fail rather than overwrite']}))
 
 
 if __name__ == '__main__':

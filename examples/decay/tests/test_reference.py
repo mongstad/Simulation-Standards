@@ -90,6 +90,9 @@ class ContractTests(unittest.TestCase):
 
 class RunTests(unittest.TestCase):
     def setUp(self):
+        environment = patch.dict(os.environ, {k: v for k, v in os.environ.items() if k != 'SIMSHELF_OUTPUT_DIR'}, clear=True)
+        environment.start()
+        self.addCleanup(environment.stop)
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.parent = Path(self.temp.name)

@@ -6,6 +6,7 @@ import csv
 import hashlib
 import json
 import math
+import os
 import platform
 import signal
 import sys
@@ -14,7 +15,7 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-VERSION = "0.1.0"
+VERSION = "0.1.1"
 
 
 def build_parser():
@@ -76,19 +77,43 @@ def write_json(path, value):
         stream.write('\n')
 
 
+def output_directory(config, argv, stamp, run_id):
+    """Use the recorder's exact root, or allocate a standalone root."""
+    if 'SIMSHELF_OUTPUT_DIR' not in os.environ:
+        parent = Path(config['output_parent'])
+        parent.mkdir(parents=True, exist_ok=True)
+        root = parent / f'run_{stamp}_{run_id}'
+        root.mkdir()  # Atomic exclusive allocation; never reuse an occupied root.
+        return root, 'standalone'
+    # Defaults do not indicate explicit user intent. Abbreviations are disabled.
+    tokens = argv[:argv.index('--')] if '--' in argv else argv
+    if any(token == '--output-parent' or token.startswith('--output-parent=') for token in tokens):
+        raise ValueError('explicit --output-parent conflicts with SIMSHELF_OUTPUT_DIR')
+    root = Path(os.environ['SIMSHELF_OUTPUT_DIR'])
+    if not root.is_absolute() or root.is_symlink() or not root.is_dir():
+        raise ValueError('SIMSHELF_OUTPUT_DIR must be an absolute, existing directory (not a symlink)')
+    if not os.access(root, os.R_OK | os.W_OK | os.X_OK):
+        raise ValueError('SIMSHELF_OUTPUT_DIR must be readable, writable and searchable')
+    if any(root.iterdir()):
+        raise ValueError('SIMSHELF_OUTPUT_DIR must be empty and unused for this run')
+    # Persist an exclusive claim: two processes cannot share a preallocated root,
+    # even if both observed it empty. Never remove the claim or partial evidence.
+    with (root / '.swss-run').open('x', encoding='utf-8') as claim:
+        claim.write(run_id + '\n')
+    return root, 'coordinated'
+
+
 def run(config, argv):
     started = datetime.now(timezone.utc)
     run_id = uuid.uuid4().hex  # Independent of any scientific RNG.
     stamp = started.strftime('%Y%m%dT%H%M%SZ')
-    parent = Path(config['output_parent'])
-    parent.mkdir(parents=True, exist_ok=True)
-    root = parent / f'run_{stamp}_{run_id}'
-    root.mkdir()  # Atomic exclusive allocation; never reuse an occupied root.
+    root, allocation = output_directory(config, argv, stamp, run_id)
     log_name = f'run_{stamp}_v{VERSION}_{run_id}.log'
     source_root = Path(__file__).resolve().parent
     status, code, final = 'failed', 1, None
     with (root / log_name).open('x', encoding='utf-8') as log:
         log.write(f'version={VERSION} run_id={run_id} status=running\n')
+        log.write(f'output_directory={root.absolute()} allocation={allocation}\n')
         log.write('argv=' + json.dumps(argv, ensure_ascii=False) + '\n')
         log.write('resolved=' + json.dumps(config, allow_nan=False) + '\n')
         log.flush()
@@ -99,6 +124,7 @@ def run(config, argv):
                 'simulation': 'scalar-decay', 'simulation_version': VERSION,
                 'swss_version': '2.0', 'run_id': run_id, 'started_utc': started.isoformat(),
                 'argv': list(argv), 'resolved': config, 'source_sha256': source,
+                'output_directory': str(root.absolute()), 'output_allocation': allocation,
                 'source_observation': 'bytes at run startup; no process isolation',
                 'python': platform.python_version(), 'implementation': platform.python_implementation(),
                 'platform': platform.platform(), 'dependencies': 'Python standard library only',

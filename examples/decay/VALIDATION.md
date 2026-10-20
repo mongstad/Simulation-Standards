@@ -1,5 +1,38 @@
 # Reference validation evidence
 
+## Output-coordination revision: 0.1.1
+
+Issue #25 / PR #30 revision, tested on 2026-10-20 on Linux with CPython 3.14.8. The script version and TOML version are `0.1.1`; the `simulate.py` SHA-256 binding has been refreshed. The scientific parser, defaults/choices, parameter resolution, step equation and diagnostics are unchanged from `0.1.0`. Existing run evidence is untouched. The initial validation report is retained below as historical evidence.
+
+Commands from the repository root:
+
+```bash
+python -B examples/decay/check_contract.py
+python -B -m unittest discover -s examples/decay/tests -v
+```
+
+Observed: all **20 tests passed**, including the full original 12-test suite and eight focused coordination tests. The contract check passes for all twelve declarations and the updated binding. Both Euler and exact-step CSV bytes and final diagnostics agree between standalone and coordinated execution for the same scientific inputs. Static comparison also confirms that the parser, parameter resolution, numerical step and diagnostic functions are unchanged from PR commit `b0a23ea125377a971fd931f09d52062f6d5628d1`.
+
+Focused coverage includes direct preallocated-root output with/without CSV; no nested directory; exact argv, output-path provenance, correlated run ID and completed logs; empty/relative/missing/file/symlink/permission-denied paths; both explicit output-parent forms (including matching paths); concurrent distinct roots and shared-root refusal; preservation of preexisting logs/JSON/CSV/claims; handled failure and refusal to reuse partial output. Permission denial is tested deterministically and with filesystem permissions when not running as root.
+
+The disposable SimShelf API test passes against **0.1.0.40**, commit `c9589fb08d00cb49a70fcf16b437a48d73b1a58a`: one precreated fixed-directory run copies three normal files, two per-run launches each copy four files including CSV, and a successive per-run launch without CSV copies three. All report `completed` and capture `complete`, with no capture errors. Per-run directories are exactly `outputs/run_<consumer run ID>`; their normal files are direct children, and no simulation-created nested directory exists. Previous artifact bytes remain unchanged. The consumer checkout is unchanged; only temporary source copies/libraries are written. The bounded unsandboxed check emitted the existing Starlette/httpx deprecation warning.
+
+### Coordinated-capture evidence
+
+| SWSS §3.1 requirement | Implementation and observed evidence | Remaining limit |
+| --- | --- | --- |
+| Agreed unique root; no second root; conflicting output options fail | Environment adapter selects the exact existing root; explicit output-parent conflicts fail before writes. Standalone allocates unique timestamp/UUID roots. Concurrent separate roots succeed; shared-root claims permit one writer only. | Fixed policy also supplies the variable in this consumer version: an unused directory must be precreated. Missing/reused fixed roots deliberately fail. Launcher must allocate non-overlapping roots. |
+| Automatic timestamped log preservation; process streams separate | SimShelf captures each log as `copy`; actual blob bytes equal the closed source file. Separate stdout/stderr log files exist, with the root acknowledgement in stdout. | Missing/skipped/oversized logs and interrupted recorder capture are not exercised in this revision. |
+| Defined selection, precedence, budgets and finalization | First-match default rules copy logs/JSON/CSV; 25 MiB/file and 200 MiB/run. Preview eligibility and final capture results checked for every normal artifact after completion. | Retention policy remains consumer-owned; long-term backup/restore and budget-boundary tests are outside coverage. |
+| Preserve evidence, distinguish copies/references, expose outcomes | Summary, provenance, log and optional CSV are eligible and copied byte-for-byte. Claim file is a reference; complete capture status is checked independently of solver status. | Referenced claims are not backups. Full capture-error reporting and symlink-escape handling remain consumer obligations, not verified here. |
+| Exclude generated outputs from source snapshots, retain source/configuration | Snapshots contain `simulate.py` and `swss.toml` and exclude `outputs/`, including prior sibling runs. | No source isolation, Git archive, cloud transfer or independent backup claim. |
+
+This supports the simulation-side adapter and the listed positive recorder integration cases, **not full §3.1 capability certification**. Browser UI, hostile directory substitution, all recorder failure cases and other platforms remain untested. The adapter requires an empty directory and keeps a persistent claim on failure; it cannot resume or reuse an occupied root. SimShelf's own version label remains `unversioned`; simulation and portable provenance retain `0.1.1`. No normative text, schema, consumer source or output policy changed.
+
+---
+
+# Initial 0.1.0 validation (historical)
+
 Validation performed for issue #25 on 2026-10-20, on Linux with CPython 3.14.8. This report covers the initial `0.1.0` reference package and SWSS v2.0/schema 2. It is not independent scientific certification or a full consumer conformance report. Temporary run outputs are discarded by the reproducible tests; the assertions and fixtures are the retained evidence.
 
 From the repository root:
