@@ -90,7 +90,7 @@ class ContractTests(unittest.TestCase):
 
 class RunTests(unittest.TestCase):
     def setUp(self):
-        environment = patch.dict(os.environ, {k: v for k, v in os.environ.items() if k != 'SIMSHELF_OUTPUT_DIR'}, clear=True)
+        environment = patch.dict(os.environ, {k: v for k, v in os.environ.items() if k not in ('SIMSHELF_OUTPUT_DIR', 'SIMSHELF_OUTPUT_POLICY')}, clear=True)
         environment.start()
         self.addCleanup(environment.stop)
         self.temp = tempfile.TemporaryDirectory()
@@ -127,6 +127,8 @@ class RunTests(unittest.TestCase):
             self.assertAlmostEqual(float(row['absolute_error']), abs(expected - analytic), places=14)
         summary = json.loads((root / 'summary.json').read_text())
         self.assertEqual(summary['status'], 'completed')
+        self.assertEqual(summary['output_directory'], str(root))
+        self.assertEqual(summary['output_allocation'], 'standalone')
         self.assertEqual(summary['run_id'], provenance['run_id'])
         self.assertFalse(summary['verified'])
         log, = root.glob('*.log')

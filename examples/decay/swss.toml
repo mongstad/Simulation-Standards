@@ -1,11 +1,11 @@
 [swss]
 schema_version = 2
 entrypoint = "simulate.py"
-simulation_version = "0.1.1"
+simulation_version = "0.1.2"
 
 [[swss.source_files]]
 path = "simulate.py"
-sha256 = "a36a6cd8c40ba0bb895c35c5501825987cf88000a1345c3fbfc5b4374d35457c"
+sha256 = "001024c94e3dca1eefaee503d9349f8f8cfcde0a11c5eb256b7f49786fbf06ff"
 
 [[swss.parameters]]
 id = "rate"

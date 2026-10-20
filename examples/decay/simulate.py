@@ -15,7 +15,7 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-VERSION = "0.1.1"
+VERSION = "0.1.2"
 
 
 def build_parser():
@@ -78,29 +78,48 @@ def write_json(path, value):
 
 
 def output_directory(config, argv, stamp, run_id):
-    """Use the recorder's exact root, or allocate a standalone root."""
-    if 'SIMSHELF_OUTPUT_DIR' not in os.environ:
+    """Apply the explicit SimShelf adapter policy; never infer ownership."""
+    destination = os.environ.get('SIMSHELF_OUTPUT_DIR')
+    policy = os.environ.get('SIMSHELF_OUTPUT_POLICY')
+    if destination is None and policy is None:
         parent = Path(config['output_parent'])
         parent.mkdir(parents=True, exist_ok=True)
         root = parent / f'run_{stamp}_{run_id}'
         root.mkdir()  # Atomic exclusive allocation; never reuse an occupied root.
         return root, 'standalone'
+    if destination is None or policy not in ('fixed', 'per_run'):
+        raise ValueError('SimShelf output adapter requires SIMSHELF_OUTPUT_DIR and '
+                         'SIMSHELF_OUTPUT_POLICY=fixed or per_run; no legacy mode is inferred')
     # Defaults do not indicate explicit user intent. Abbreviations are disabled.
     tokens = argv[:argv.index('--')] if '--' in argv else argv
     if any(token == '--output-parent' or token.startswith('--output-parent=') for token in tokens):
         raise ValueError('explicit --output-parent conflicts with SIMSHELF_OUTPUT_DIR')
-    root = Path(os.environ['SIMSHELF_OUTPUT_DIR'])
-    if not root.is_absolute() or root.is_symlink() or not root.is_dir():
-        raise ValueError('SIMSHELF_OUTPUT_DIR must be an absolute, existing directory (not a symlink)')
+    root = Path(destination)
+    if not root.is_absolute():
+        raise ValueError('SIMSHELF_OUTPUT_DIR must be absolute')
+    # Reject symlinks in existing ancestors too, including dangling links.
+    for component in (*reversed(root.parents), root):
+        if component.is_symlink():
+            raise ValueError('SIMSHELF_OUTPUT_DIR must not traverse symlinks')
+        if component.exists() and not component.is_dir():
+            raise ValueError('SIMSHELF_OUTPUT_DIR must name a directory, not a file')
+    if policy == 'fixed':
+        root.mkdir(parents=True, exist_ok=True)
+    if not root.is_dir():
+        raise ValueError('SIMSHELF_OUTPUT_DIR per_run root must already exist')
     if not os.access(root, os.R_OK | os.W_OK | os.X_OK):
         raise ValueError('SIMSHELF_OUTPUT_DIR must be readable, writable and searchable')
+    if policy == 'fixed':
+        root = root / f'run_{stamp}_{run_id}'
+        root.mkdir()  # An occupied parent is valid; an occupied child is not.
+        return root, 'fixed'
     if any(root.iterdir()):
-        raise ValueError('SIMSHELF_OUTPUT_DIR must be empty and unused for this run')
+        raise ValueError('SIMSHELF_OUTPUT_DIR per_run root must be empty and unused')
     # Persist an exclusive claim: two processes cannot share a preallocated root,
     # even if both observed it empty. Never remove the claim or partial evidence.
     with (root / '.swss-run').open('x', encoding='utf-8') as claim:
         claim.write(run_id + '\n')
-    return root, 'coordinated'
+    return root, 'per_run'
 
 
 def run(config, argv):
@@ -165,6 +184,7 @@ def run(config, argv):
         # A failure writing/closing evidence propagates to a nonzero process exit.
         write_json(root / 'summary.json', {
             'run_id': run_id, 'status': status, 'last_sample': final,
+            'output_directory': str(root.absolute()), 'output_allocation': allocation,
             'quantities': {'physically_modeled': ['concentration'],
                            'diagnostic': ['analytic_concentration', 'absolute_error'],
                            'dimensionless': ['step']},
