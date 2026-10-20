@@ -1,8 +1,8 @@
 # Simulation Standards
 
-Simulation Standards defines the **Scientific Workflow Simulation Standard (SWSS)**, an independent, voluntary standard for scientific simulation workflows.
+Simulation Standards defines the **Scientific Workflow Simulation Standard (SWSS)**, an independent standard for scientific simulation workflows.
 
-SWSS supports scientific integrity, reproducibility and portability through source versioning, exact arguments, isolated outputs, logs, provenance and truthful run status. Simulations remain independently executable and authoritative for their scientific behavior. Consuming applications implement the standard without defining its requirements. Developers are free to adopt or ignore it.
+SWSS supports scientific integrity, reproducibility and portability through source versioning, exact arguments, isolated outputs, logs, provenance and truthful run status. Simulations remain independently executable and authoritative for their scientific behavior. Consuming applications implement the standard without defining its requirements.
 
 ## Baseline and optional capabilities
 
