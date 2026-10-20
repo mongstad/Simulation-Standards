@@ -1,0 +1,131 @@
+[swss]
+schema_version = 2
+entrypoint = "simulate.py"
+simulation_version = "0.1.0"
+
+[[swss.source_files]]
+path = "simulate.py"
+sha256 = "e3be443a938bd5c1094776b941316512a13cec46f6228bd5e927ab16c33eb4ca"
+
+[[swss.parameters]]
+id = "rate"
+kind = "option"
+options = ["--rate", "-k"]
+required = true
+type = "float"
+action = "store"
+help = "Positive decay rate in inverse time units"
+
+[[swss.parameters]]
+id = "initial"
+kind = "option"
+options = ["--initial", "-c"]
+required = false
+type = "float"
+action = "store"
+help = "Initial concentration in mol/L; must be positive"
+default = 1.0
+
+[[swss.parameters]]
+id = "steps"
+kind = "option"
+options = ["--steps", "-n"]
+required = false
+type = "integer"
+action = "store"
+help = "Number of integration steps"
+default = 20
+choices = [10, 20, 40]
+
+[[swss.parameters]]
+id = "dt"
+kind = "option"
+options = ["--dt"]
+required = false
+type = "float"
+action = "store"
+help = "Time advanced per step; omitted value resolves from rate and steps"
+
+[[swss.parameters]]
+id = "method"
+kind = "option"
+options = ["--method"]
+required = false
+type = "string"
+action = "store"
+help = "Integration rule for the decay equation"
+default = "euler"
+choices = ["euler", "exact"]
+
+[[swss.parameters]]
+id = "sample_every"
+kind = "option"
+options = ["--sample-every"]
+required = false
+type = "integer"
+action = "store"
+help = "Step interval for saved measurements; final state is always sampled"
+default = 1
+choices = [1, 2, 5]
+
+[[swss.parameters]]
+id = "rate_scale"
+kind = "option"
+options = ["--rate-scale"]
+required = false
+type = "float"
+action = "store"
+help = "Dimensionless multiplier applied to the decay rate"
+default = 1.0
+choices = [0.5, 1.0, 2.0]
+
+[[swss.parameters]]
+id = "time_unit"
+kind = "option"
+options = ["--time-unit"]
+required = false
+type = "string"
+action = "store"
+help = "Unit used consistently for time and inverse decay rate; no conversion"
+default = "s"
+choices = ["s", "min"]
+
+[[swss.parameters]]
+id = "label"
+kind = "option"
+options = ["--label"]
+required = false
+type = "string"
+action = "store"
+help = "Free-text run annotation; empty text is meaningful"
+default = ""
+
+[[swss.parameters]]
+id = "output_parent"
+kind = "option"
+options = ["--output-parent"]
+required = false
+type = "string"
+action = "store"
+help = "Parent for a new unique run directory; relative to the working directory"
+default = "outputs"
+
+[[swss.parameters]]
+id = "progress"
+kind = "option"
+options = ["--progress"]
+required = false
+type = "boolean"
+action = "store_true"
+help = "Emit measured step counts and concentration at sample times"
+default = false
+
+[[swss.parameters]]
+id = "series"
+kind = "option"
+options = ["--no-series"]
+required = false
+type = "boolean"
+action = "store_false"
+help = "Omit the measurement series while retaining the final diagnostic"
+default = true
