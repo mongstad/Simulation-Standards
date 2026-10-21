@@ -6,7 +6,6 @@ import csv
 import hashlib
 import json
 import math
-import os
 import platform
 import signal
 import sys
@@ -15,7 +14,7 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-VERSION = "0.1.2"
+VERSION = "0.1.3"
 
 
 def build_parser():
@@ -77,62 +76,26 @@ def write_json(path, value):
         stream.write('\n')
 
 
-def output_directory(config, argv, stamp, run_id):
-    """Apply the explicit SimShelf adapter policy; never infer ownership."""
-    destination = os.environ.get('SIMSHELF_OUTPUT_DIR')
-    policy = os.environ.get('SIMSHELF_OUTPUT_POLICY')
-    if destination is None and policy is None:
-        parent = Path(config['output_parent'])
-        parent.mkdir(parents=True, exist_ok=True)
-        root = parent / f'run_{stamp}_{run_id}'
-        root.mkdir()  # Atomic exclusive allocation; never reuse an occupied root.
-        return root, 'standalone'
-    if destination is None or policy not in ('fixed', 'per_run'):
-        raise ValueError('SimShelf output adapter requires SIMSHELF_OUTPUT_DIR and '
-                         'SIMSHELF_OUTPUT_POLICY=fixed or per_run; no legacy mode is inferred')
-    # Defaults do not indicate explicit user intent. Abbreviations are disabled.
-    tokens = argv[:argv.index('--')] if '--' in argv else argv
-    if any(token == '--output-parent' or token.startswith('--output-parent=') for token in tokens):
-        raise ValueError('explicit --output-parent conflicts with SIMSHELF_OUTPUT_DIR')
-    root = Path(destination)
-    if not root.is_absolute():
-        raise ValueError('SIMSHELF_OUTPUT_DIR must be absolute')
-    # Reject symlinks in existing ancestors too, including dangling links.
-    for component in (*reversed(root.parents), root):
-        if component.is_symlink():
-            raise ValueError('SIMSHELF_OUTPUT_DIR must not traverse symlinks')
-        if component.exists() and not component.is_dir():
-            raise ValueError('SIMSHELF_OUTPUT_DIR must name a directory, not a file')
-    if policy == 'fixed':
-        root.mkdir(parents=True, exist_ok=True)
-    if not root.is_dir():
-        raise ValueError('SIMSHELF_OUTPUT_DIR per_run root must already exist')
-    if not os.access(root, os.R_OK | os.W_OK | os.X_OK):
-        raise ValueError('SIMSHELF_OUTPUT_DIR must be readable, writable and searchable')
-    if policy == 'fixed':
-        root = root / f'run_{stamp}_{run_id}'
-        root.mkdir()  # An occupied parent is valid; an occupied child is not.
-        return root, 'fixed'
-    if any(root.iterdir()):
-        raise ValueError('SIMSHELF_OUTPUT_DIR per_run root must be empty and unused')
-    # Persist an exclusive claim: two processes cannot share a preallocated root,
-    # even if both observed it empty. Never remove the claim or partial evidence.
-    with (root / '.swss-run').open('x', encoding='utf-8') as claim:
-        claim.write(run_id + '\n')
-    return root, 'per_run'
+def output_directory(config, stamp, run_id):
+    """Exclusively allocate one standalone run directory beneath the parent."""
+    parent = Path(config['output_parent'])
+    parent.mkdir(parents=True, exist_ok=True)
+    root = parent / f'run_{stamp}_{run_id}'
+    root.mkdir()  # Atomic exclusive allocation; never reuse an occupied root.
+    return root
 
 
 def run(config, argv):
     started = datetime.now(timezone.utc)
     run_id = uuid.uuid4().hex  # Independent of any scientific RNG.
     stamp = started.strftime('%Y%m%dT%H%M%SZ')
-    root, allocation = output_directory(config, argv, stamp, run_id)
+    root = output_directory(config, stamp, run_id)
     log_name = f'run_{stamp}_v{VERSION}_{run_id}.log'
     source_root = Path(__file__).resolve().parent
     status, code, final = 'failed', 1, None
     with (root / log_name).open('x', encoding='utf-8') as log:
         log.write(f'version={VERSION} run_id={run_id} status=running\n')
-        log.write(f'output_directory={root.absolute()} allocation={allocation}\n')
+        log.write(f'output_directory={root.absolute()}\n')
         log.write('argv=' + json.dumps(argv, ensure_ascii=False) + '\n')
         log.write('resolved=' + json.dumps(config, allow_nan=False) + '\n')
         log.flush()
@@ -143,7 +106,7 @@ def run(config, argv):
                 'simulation': 'scalar-decay', 'simulation_version': VERSION,
                 'swss_version': '2.0', 'run_id': run_id, 'started_utc': started.isoformat(),
                 'argv': list(argv), 'resolved': config, 'source_sha256': source,
-                'output_directory': str(root.absolute()), 'output_allocation': allocation,
+                'output_directory': str(root.absolute()),
                 'source_observation': 'bytes at run startup; no process isolation',
                 'python': platform.python_version(), 'implementation': platform.python_implementation(),
                 'platform': platform.platform(), 'dependencies': 'Python standard library only',
@@ -184,7 +147,7 @@ def run(config, argv):
         # A failure writing/closing evidence propagates to a nonzero process exit.
         write_json(root / 'summary.json', {
             'run_id': run_id, 'status': status, 'last_sample': final,
-            'output_directory': str(root.absolute()), 'output_allocation': allocation,
+            'output_directory': str(root.absolute()),
             'quantities': {'physically_modeled': ['concentration'],
                            'diagnostic': ['analytic_concentration', 'absolute_error'],
                            'dimensionless': ['step']},
