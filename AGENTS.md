@@ -4,10 +4,12 @@ This repository documents scientific simulation workflow conventions. These inst
 
 ## Scope and sources of truth
 
-- SWSS is one independent, scientific workflow standard with a baseline and optional capabilities. No application-specific profiles, namespaces, APIs or formats belong in its portable requirements.
+- SWSS is one independent, scientific workflow standard with a baseline and independent optional capabilities. Applications conform or adapt to SWSS; do not tailor the contract to a consuming application's architecture.
+- Keep specifications, reference implementations, portable metadata, examples and their primary documentation application-independent. Do not introduce consumer product names, environment variables, APIs, capture policies, versions, implementation paths, installation requirements or repository links into these materials.
+- Reference simulations must run independently and demonstrate the claimed SWSS requirements without requiring or detecting a named consumer. Consumer-specific adapters, integration tests and implementation notes belong in the respective consumer repository, under separate authorization.
 - The current specification text is `standards/SWSS/v2.0.md`, submitted for owner review. Earlier tracked versions are archival summaries; original text remains in Git history. Do not rewrite commit/tag history or external scientific records. Specification acceptance does not imply implemented consumers or certification.
-- Propose and review portable additions to `swss.toml` or shared workflow contracts here first, then implement the accepted contract in adopting repositories with separate authorization. Consumer-specific details may remain local but cannot silently alter SWSS semantics. Developers may adopt or ignore SWSS.
-- Keep normative requirements self-contained. External format/API documentation governs only the adapter or format selected by an implementation; it cannot silently change SWSS obligations.
+- Propose and review portable additions to `swss.toml` or shared workflow contracts here first, then implement the accepted contract in adopting repositories with separate authorization. Consumer-local extensions do not authorize application-specific reference materials here or alter SWSS semantics. Developers may adopt or ignore SWSS.
+- Keep normative requirements self-contained. Clearly label neutral transport examples as illustrative, not normative. Renaming a consumer protocol's variables does not make it a portable SWSS contract.
 - Avoid duplicating the entire specification in README, reviews or agent instructions. Keep links and terminology consistent.
 - Never silently change scientific methods, numerical results, units, provenance or validation claims.
 
@@ -22,7 +24,7 @@ This repository documents scientific simulation workflow conventions. These inst
 ## Quality and review
 
 - Write concise, precise, testable requirements. Use MUST/SHOULD/MAY consistently and label drafts and proposals clearly.
-- Prefer links to the applications' authoritative technical contracts over copied API or wire-format specifications.
+- Review changed paths and content for named-consumer coupling, including optional adapters and tests. Use SWSS as the authority for portable behavior; keep consumer contract links and API or wire-format implementation guidance in the consumer repository.
 - Check Markdown links and relative paths; review cross-document consistency and ensure no duplicate authoritative version is left behind when consolidation is in scope.
 - Document actual validation evidence and limitations. Do not claim that tests, integrations or reference implementations have been exercised unless they have.
 - Protect sensitive data; avoid committing generated binary captures, local environment files, machine-specific paths and run logs by default.
