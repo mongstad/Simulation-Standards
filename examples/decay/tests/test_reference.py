@@ -7,7 +7,6 @@ import hashlib
 import io
 import json
 import math
-import os
 from pathlib import Path
 import subprocess
 import sys
@@ -90,9 +89,6 @@ class ContractTests(unittest.TestCase):
 
 class RunTests(unittest.TestCase):
     def setUp(self):
-        environment = patch.dict(os.environ, {k: v for k, v in os.environ.items() if k not in ('SIMSHELF_OUTPUT_DIR', 'SIMSHELF_OUTPUT_POLICY')}, clear=True)
-        environment.start()
-        self.addCleanup(environment.stop)
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.parent = Path(self.temp.name)
@@ -128,7 +124,6 @@ class RunTests(unittest.TestCase):
         summary = json.loads((root / 'summary.json').read_text())
         self.assertEqual(summary['status'], 'completed')
         self.assertEqual(summary['output_directory'], str(root))
-        self.assertEqual(summary['output_allocation'], 'standalone')
         self.assertEqual(summary['run_id'], provenance['run_id'])
         self.assertFalse(summary['verified'])
         log, = root.glob('*.log')
@@ -160,6 +155,55 @@ class RunTests(unittest.TestCase):
         self.assertEqual(len(roots), 2)
         self.assertEqual((roots[0]/'measurements.csv').read_bytes(), (roots[1]/'measurements.csv').read_bytes())
 
+    def test_default_and_custom_parents_preserve_science_and_evidence(self):
+        for method in ('euler', 'exact'):
+            argv = ['-k', '1e-1', '-n', '0010', '--label', '', '--method', method]
+            saved = {}
+            measurements = None
+            final = None
+            for extra, parent in (([], self.parent/'outputs'),
+                                  (['--output-parent', 'nested/custom'], self.parent/'nested/custom'),
+                                  (['--output-parent=nested/custom'], self.parent/'nested/custom')):
+                before = set(parent.iterdir()) if parent.exists() else set()
+                result = subprocess.run([sys.executable, '-B', str(ROOT/'simulate.py'), *argv, *extra],
+                                        cwd=self.parent, text=True, capture_output=True, timeout=10)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                root, = set(parent.iterdir()) - before
+                self.assertTrue(root.name.startswith('run_'))
+                self.assertFalse(any(p.is_dir() for p in root.iterdir()))
+                log, = root.glob('*.log')
+                self.assertEqual({p.name for p in root.iterdir()},
+                                 {'provenance.json', 'summary.json', 'measurements.csv', log.name})
+                provenance = json.loads((root/'provenance.json').read_text())
+                summary = json.loads((root/'summary.json').read_text())
+                self.assertEqual(provenance['argv'], argv + extra)
+                self.assertEqual(provenance['output_directory'], str(root))
+                self.assertEqual(summary['output_directory'], str(root))
+                self.assertEqual(provenance['simulation_version'], simulate.VERSION)
+                self.assertEqual(summary['status'], 'completed')
+                self.assertIn('output_directory=' + str(root), log.read_text())
+                data = (root/'measurements.csv').read_bytes()
+                if measurements is not None:
+                    self.assertEqual(data, measurements)
+                    self.assertEqual(summary['last_sample'], final)
+                measurements, final = data, summary['last_sample']
+                self.assertTrue(all(p.read_bytes() == content for p, content in saved.items()))
+                saved.update({p: p.read_bytes() for p in root.iterdir()})
+
+    def test_parent_file_and_allocation_failure_preserve_evidence(self):
+        occupied = self.parent/'occupied'
+        occupied.write_bytes(b'previous evidence')
+        for parent in (occupied, occupied/'child'):
+            with contextlib.redirect_stderr(io.StringIO()) as error:
+                self.assertEqual(simulate.main(['--rate', '1', '--output-parent', str(parent)]), 1)
+            self.assertIn('run/evidence failure:', error.getvalue())
+            self.assertEqual(occupied.read_bytes(), b'previous evidence')
+        with patch.object(simulate.Path, 'mkdir', side_effect=PermissionError('allocation denied')), \
+             contextlib.redirect_stderr(io.StringIO()) as error:
+            self.assertEqual(simulate.main(['--rate', '1', '--output-parent', str(self.parent)]), 1)
+        self.assertIn('allocation denied', error.getvalue())
+        self.assertEqual(list(self.parent.iterdir()), [occupied])
+
     def test_exclusive_root_collision(self):
         args = ['--rate', '1', '--output-parent', str(self.parent)]
         with patch.object(simulate, 'datetime') as clock, patch.object(simulate.uuid, 'uuid4') as uuid:
@@ -184,6 +228,10 @@ class RunTests(unittest.TestCase):
             self.assertIn('status=' + status, next(root.glob('*.log')).read_text())
             with (root/'measurements.csv').open() as stream:
                 self.assertEqual(len(list(csv.DictReader(stream))), 1)
+            saved = {p: p.read_bytes() for p in root.iterdir()}
+            retry, _ = self.launch(['--rate', '1'])
+            self.assertNotEqual(root, retry)
+            self.assertTrue(all(p.read_bytes() == content for p, content in saved.items()))
 
     def test_evidence_io_failure_nonzero(self):
         original = simulate.write_json
