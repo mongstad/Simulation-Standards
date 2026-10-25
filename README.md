@@ -16,6 +16,8 @@ Read the [SWSS v2.0 specification](standards/SWSS/v2.0.md) for requirements and 
 
 Try the [scalar decay reference simulation](examples/decay/README.md) for a small executable example and contract checks.
 
+The [standalone output-location proposal](docs/proposals/0038-standalone-output-location.md) describes draft SWSS v3.0 behavior, schema-3 output-parent discovery and conformance fixtures. It does not change the current v2.0/schema-2 contract.
+
 ## Licensing and governance
 
 Original specification, documentation and embedded examples are licensed under [CC BY 4.0](LICENSE.md). Future standalone executable reference code is covered by [MIT](LICENSE-CODE) only when explicitly designated and marked as such. Third-party material retains its own licenses.
