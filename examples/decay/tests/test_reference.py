@@ -25,10 +25,11 @@ class ContractTests(unittest.TestCase):
     def setUp(self):
         self.source = (ROOT / 'simulate.py').read_bytes()
         self.metadata = (ROOT / 'swss.toml').read_bytes()
+        self.helper = (ROOT / 'output_contract.py').read_bytes()
         self.rows = tomllib.loads(self.metadata.decode())['swss']['parameters']
 
     def test_static_and_actual_parser_agreement(self):
-        self.assertEqual(check_contract.compare(self.source, self.metadata), 12)
+        self.assertEqual(check_contract.compare(self.source, self.metadata, self.helper), 12)
         actions = [a for a in simulate.build_parser()._actions if not isinstance(a, argparse._HelpAction)]
         self.assertEqual(len(actions), len(self.rows))
         types = {'integer': int, 'float': float, 'string': str}
@@ -54,9 +55,9 @@ class ContractTests(unittest.TestCase):
                 self.assertIn(case['old'], self.metadata.decode())
                 changed = self.metadata.decode().replace(case['old'], case['new'], 1).encode()
                 with self.assertRaises(ValueError):
-                    check_contract.compare(self.source, changed)
+                    check_contract.compare(self.source, changed, self.helper)
         with self.assertRaisesRegex(ValueError, 'stale source binding'):
-            check_contract.compare(self.source + b'\n# source changed\n', self.metadata)
+            check_contract.compare(self.source + b'\n# source changed\n', self.metadata, self.helper)
 
     def test_static_check_does_not_execute_source_or_write(self):
         hostile = self.source + b'\nraise RuntimeError("must never execute")\n'
@@ -66,7 +67,7 @@ class ContractTests(unittest.TestCase):
              patch('builtins.open', side_effect=AssertionError('file access')), \
              patch('subprocess.Popen', side_effect=AssertionError('subprocess')), \
              patch('socket.socket', side_effect=AssertionError('network')):
-            self.assertEqual(check_contract.compare(hostile, metadata), 12)
+            self.assertEqual(check_contract.compare(hostile, metadata, self.helper), 12)
 
     def test_parser_semantics(self):
         p = simulate.build_parser()
@@ -156,16 +157,19 @@ class RunTests(unittest.TestCase):
         self.assertEqual((roots[0]/'measurements.csv').read_bytes(), (roots[1]/'measurements.csv').read_bytes())
 
     def test_default_and_custom_parents_preserve_science_and_evidence(self):
+        import shutil
+        deployment = self.parent / 'project'
+        shutil.copytree(ROOT, deployment, ignore=shutil.ignore_patterns('__pycache__'))
         for method in ('euler', 'exact'):
             argv = ['-k', '1e-1', '-n', '0010', '--label', '', '--method', method]
             saved = {}
             measurements = None
             final = None
-            for extra, parent in (([], self.parent/'outputs'),
-                                  (['--output-parent', 'nested/custom'], self.parent/'nested/custom'),
-                                  (['--output-parent=nested/custom'], self.parent/'nested/custom')):
+            for extra, parent in (([], deployment/'outputs'),
+                                  (['--output-parent', 'nested/custom'], deployment/'nested/custom'),
+                                  (['--output-parent=nested/custom'], deployment/'nested/custom')):
                 before = set(parent.iterdir()) if parent.exists() else set()
-                result = subprocess.run([sys.executable, '-B', str(ROOT/'simulate.py'), *argv, *extra],
+                result = subprocess.run([sys.executable, '-B', str(deployment/'simulate.py'), *argv, *extra],
                                         cwd=self.parent, text=True, capture_output=True, timeout=10)
                 self.assertEqual(result.returncode, 0, result.stderr)
                 root, = set(parent.iterdir()) - before

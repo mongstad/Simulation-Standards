@@ -6,17 +6,17 @@ SWSS supports scientific integrity, reproducibility and portability through sour
 
 ## Baseline and optional capabilities
 
-SWSS v2.0 is the current specification. Its baseline protects scientific integrity. Independent optional capabilities cover coordinated run capture, progress and metrics, scientific exports, and portable configuration and parameter editing. No particular application, library or binary format is required.
+SWSS v3.0 is the current specification. Its baseline protects scientific integrity. Independent optional capabilities cover coordinated run capture, progress and metrics, scientific exports, and portable configuration and parameter editing. No particular application, library or binary format is required.
 
-The portable configuration capability uses schema 2 in one `swss.toml` file.
+The portable configuration capability uses schema 3 in one `swss.toml` file.
 
 ## Get started
 
-Read the [SWSS v2.0 specification](standards/SWSS/v2.0.md) for requirements and validation criteria, then identify the baseline and optional capabilities relevant to your simulation or tool.
+Read the [SWSS v3.0 specification](standards/SWSS/v3.0.md) for requirements and validation criteria, then identify the baseline and optional capabilities relevant to your simulation or tool.
 
 Try the [scalar decay reference simulation](examples/decay/README.md) for a small executable example and contract checks.
 
-The [standalone output-location proposal](docs/proposals/0038-standalone-output-location.md) describes draft SWSS v3.0 behavior, schema-3 output-parent discovery and conformance fixtures. It does not change the current v2.0/schema-2 contract.
+The [v2.0 specification](standards/SWSS/v2.0.md) and byte-preserved [schema-2 reference](examples/decay-v2/README.md) remain available for historical/compatible workflows. They retain their original semantics; no automatic migration is performed. See [adoption and reader compatibility](standards/SWSS/v3.0.md#6-adoption-and-reader-compatibility) and [output-location cases](standards/SWSS/conformance/output-location.md).
 
 ## Licensing and governance
 

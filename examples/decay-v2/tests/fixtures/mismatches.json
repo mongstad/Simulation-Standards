@@ -1,0 +1,13 @@
+[
+  {"name": "renamed flag", "old": "[\"--rate\", \"-k\"]", "new": "[\"--decay-rate\", \"-k\"]"},
+  {"name": "wrong type", "old": "type = \"float\"", "new": "type = \"integer\""},
+  {"name": "missing alias", "old": "[\"--rate\", \"-k\"]", "new": "[\"--rate\"]"},
+  {"name": "wrong default", "old": "default = 20", "new": "default = 10"},
+  {"name": "wrong choices", "old": "[10, 20, 40]", "new": "[10, 20, 80]"},
+  {"name": "requiredness", "old": "required = true", "new": "required = false"},
+  {"name": "action", "old": "action = \"store_true\"", "new": "action = \"store_false\""},
+  {"name": "kind", "old": "kind = \"option\"", "new": "kind = \"positional\""},
+  {"name": "numeric default type", "old": "default = 1.0", "new": "default = 1"},
+  {"name": "invalid TOML", "old": "schema_version = 2", "new": "schema_version = 2\nschema_version = 2"},
+  {"name": "stale binding", "old": "path = \"simulate.py\"", "new": "path = \"old.py\""}
+]

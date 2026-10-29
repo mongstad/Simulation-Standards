@@ -14,7 +14,12 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-VERSION = "0.1.3"
+from output_contract import identities, read_source, recheck, runtime_path, validate_parent
+
+VERSION = "0.1.4"
+
+# Author-selected root for this root-level reference deployment, independent of cwd.
+SIMULATION_ROOT = Path(__file__).absolute().parent
 
 
 def build_parser():
@@ -28,7 +33,7 @@ def build_parser():
     p.add_argument('--rate-scale', type=float, choices=[0.5, 1.0, 2.0], default=1.0, help='Dimensionless multiplier applied to the decay rate')
     p.add_argument('--time-unit', type=str, choices=['s', 'min'], default='s', help='Unit used consistently for time and inverse decay rate; no conversion')
     p.add_argument('--label', type=str, default='', help='Free-text run annotation; empty text is meaningful')
-    p.add_argument('--output-parent', type=str, default='outputs', help='Parent for a new unique run directory; relative to the working directory')
+    p.add_argument('--output-parent', '-o', type=str, default='outputs', help='Parent for a new unique run directory; relative to the selected simulation root')
     p.add_argument('--progress', action='store_true', default=False, help='Emit measured step counts and concentration at sample times')
     p.add_argument('--no-series', dest='series', action='store_false', default=True, help='Omit the measurement series while retaining the final diagnostic')
     return p
@@ -78,8 +83,20 @@ def write_json(path, value):
 
 def output_directory(config, stamp, run_id):
     """Exclusively allocate one standalone run directory beneath the parent."""
-    parent = Path(config['output_parent'])
+    selected = Path(config.get('simulation_root', SIMULATION_ROOT))
+    parent = runtime_path(selected, config['output_parent'])
+    # This fixture has no external scientific inputs. Protect the whole source
+    # package's non-output files by rejecting a parent containing any such file.
+    protected = [selected / name for name in ('simulate.py', 'swss.toml', 'output_contract.py',
+                 'check_contract.py', 'README.md', 'VALIDATION.md', 'tests', 'inputs', 'solver')]
+    protected.extend(Path(__file__).absolute().parent / name
+                     for name in ('simulate.py', 'output_contract.py'))
+    guards = validate_parent(selected, parent, protected)
+    recheck(guards)
     parent.mkdir(parents=True, exist_ok=True)
+    recheck(guards)
+    guards = identities(parent)
+    recheck(guards)
     root = parent / f'run_{stamp}_{run_id}'
     root.mkdir()  # Atomic exclusive allocation; never reuse an occupied root.
     return root
@@ -91,7 +108,8 @@ def run(config, argv):
     stamp = started.strftime('%Y%m%dT%H%M%SZ')
     root = output_directory(config, stamp, run_id)
     log_name = f'run_{stamp}_v{VERSION}_{run_id}.log'
-    source_root = Path(__file__).resolve().parent
+    source_root = Path(config.get('simulation_root', SIMULATION_ROOT))
+    package_root = Path(__file__).absolute().parent
     status, code, final = 'failed', 1, None
     with (root / log_name).open('x', encoding='utf-8') as log:
         log.write(f'version={VERSION} run_id={run_id} status=running\n')
@@ -100,13 +118,22 @@ def run(config, argv):
         log.write('resolved=' + json.dumps(config, allow_nan=False) + '\n')
         log.flush()
         try:
-            source = {name: hashlib.sha256((source_root / name).read_bytes()).hexdigest()
-                      for name in ('simulate.py', 'swss.toml')}
+            source = {str((package_root / name).relative_to(source_root)):
+                      hashlib.sha256(read_source(package_root / name)).hexdigest()
+                      for name in ('simulate.py', 'output_contract.py')}
+            if (source_root / 'swss.toml').exists():
+                source['swss.toml'] = hashlib.sha256(read_source(source_root / 'swss.toml', 16384)).hexdigest()
             write_json(root / 'provenance.json', {
                 'simulation': 'scalar-decay', 'simulation_version': VERSION,
-                'swss_version': '2.0', 'run_id': run_id, 'started_utc': started.isoformat(),
+                'swss_version': '3.0', 'run_id': run_id, 'started_utc': started.isoformat(),
                 'argv': list(argv), 'resolved': config, 'source_sha256': source,
                 'output_directory': str(root.absolute()),
+                'simulation_root': str(source_root), 'effective_output_parent': str(root.parent),
+                'selected_entrypoint': str((package_root / 'simulate.py').relative_to(source_root)),
+                'allocation_mode': 'standalone child',
+                'known_output_boundaries': [str(source_root / 'outputs'), str(root.parent)],
+                'path_check_timing': 'before parent creation and exclusive child allocation',
+                'source_policy': 'explicit package files only; no recursive output/source discovery',
                 'source_observation': 'bytes at run startup; no process isolation',
                 'python': platform.python_version(), 'implementation': platform.python_implementation(),
                 'platform': platform.platform(), 'dependencies': 'Python standard library only',
@@ -158,12 +185,19 @@ def run(config, argv):
     return code
 
 
-def main(argv=None):
+def main(argv=None, *, simulation_root=None):
     argv = list(sys.argv[1:] if argv is None else argv)
     parser = build_parser()
     args = parser.parse_args(argv)
     try:
         config = resolve(args)
+        selected = Path(simulation_root) if simulation_root is not None else SIMULATION_ROOT
+        if not selected.is_absolute() or not selected.is_dir():
+            raise ValueError('simulation root must be an explicitly selected absolute directory')
+        identities(selected)
+        if not Path(__file__).absolute().is_relative_to(selected):
+            raise ValueError('selected entrypoint is outside the simulation root')
+        config['simulation_root'] = str(selected)
     except ValueError as error:
         parser.error(str(error))
     def interrupted(signum, frame):

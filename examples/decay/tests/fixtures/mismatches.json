@@ -8,6 +8,6 @@
   {"name": "action", "old": "action = \"store_true\"", "new": "action = \"store_false\""},
   {"name": "kind", "old": "kind = \"option\"", "new": "kind = \"positional\""},
   {"name": "numeric default type", "old": "default = 1.0", "new": "default = 1"},
-  {"name": "invalid TOML", "old": "schema_version = 2", "new": "schema_version = 2\nschema_version = 2"},
+  {"name": "invalid TOML", "old": "schema_version = 3", "new": "schema_version = 3\nschema_version = 3"},
   {"name": "stale binding", "old": "path = \"simulate.py\"", "new": "path = \"old.py\""}
 ]
