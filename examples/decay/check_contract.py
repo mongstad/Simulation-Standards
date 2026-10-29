@@ -8,6 +8,8 @@ import sys
 import tomllib
 from pathlib import Path
 
+from output_contract import parse
+
 LIMIT = 65536  # Deliberately smaller author-tool limit, not an SWSS validity rule.
 
 
@@ -41,18 +43,19 @@ def source_contract(source):
     return version, rows
 
 
-def compare(source, metadata):
+def compare(source, metadata, helper):
     """Compare bounded bytes; never import/execute the source being checked."""
-    if len(source) > LIMIT or len(metadata) > LIMIT:
+    if any(len(data) > LIMIT for data in (source, metadata, helper)):
         raise ValueError('author check input exceeds 64 KiB')
     version, expected = source_contract(source)
+    parse(metadata)
     document = tomllib.loads(metadata.decode('utf-8'))
     if set(document) != {'swss'}:
         raise ValueError('fixture uses only the swss root table')
     swss = document['swss']
-    if set(swss) != {'schema_version', 'entrypoint', 'simulation_version', 'parameters', 'source_files'}:
+    if set(swss) != {'schema_version', 'entrypoint', 'simulation_version', 'parameters', 'source_files', 'output_parent_parameter'}:
         raise ValueError('unexpected fixture header fields')
-    if type(swss['schema_version']) is not int or swss['schema_version'] != 2:
+    if type(swss['schema_version']) is not int or swss['schema_version'] != 3:
         raise ValueError('schema version mismatch')
     if swss['entrypoint'] != 'simulate.py' or swss['simulation_version'] != version:
         raise ValueError('entrypoint/version mismatch')
@@ -60,6 +63,9 @@ def compare(source, metadata):
     if json.dumps(swss['parameters'], sort_keys=True) != json.dumps(expected, sort_keys=True):
         raise ValueError('parser/metadata parameter mismatch')
     binding = [{'path': 'simulate.py', 'sha256': hashlib.sha256(source).hexdigest()}]
+    binding.append({'path': 'output_contract.py', 'sha256': hashlib.sha256(helper).hexdigest()})
+    if swss.get('output_parent_parameter') != 'output_parent':
+        raise ValueError('output binding mismatch')
     if swss['source_files'] != binding:
         raise ValueError('stale source binding')
     return len(expected)
@@ -72,7 +78,7 @@ def check(root):
             raise ValueError('expected regular fixture file')
         with path.open('rb') as stream:
             return stream.read(LIMIT + 1)
-    return compare(read('simulate.py'), read('swss.toml'))
+    return compare(read('simulate.py'), read('swss.toml'), read('output_contract.py'))
 
 
 if __name__ == '__main__':

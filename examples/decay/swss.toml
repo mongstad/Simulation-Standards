@@ -1,11 +1,16 @@
 [swss]
-schema_version = 2
+schema_version = 3
 entrypoint = "simulate.py"
-simulation_version = "0.1.3"
+simulation_version = "0.1.4"
+output_parent_parameter = "output_parent"
 
 [[swss.source_files]]
 path = "simulate.py"
-sha256 = "48a0b582d8bceb007a547dfc891333ad62d766114ffd17eb8284128e04780f41"
+sha256 = "4a0095b3985e9ee225c901a59c101084c9125f9029d6e50baf35bb9181312585"
+
+[[swss.source_files]]
+path = "output_contract.py"
+sha256 = "945137bee432e6dfb0516ad4c9601ab888dbdc7f32f321b9edca3a91372ecd93"
 
 [[swss.parameters]]
 id = "rate"
@@ -103,11 +108,11 @@ default = ""
 [[swss.parameters]]
 id = "output_parent"
 kind = "option"
-options = ["--output-parent"]
+options = ["--output-parent", "-o"]
 required = false
 type = "string"
 action = "store"
-help = "Parent for a new unique run directory; relative to the working directory"
+help = "Parent for a new unique run directory; relative to the selected simulation root"
 default = "outputs"
 
 [[swss.parameters]]

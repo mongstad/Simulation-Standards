@@ -1,6 +1,6 @@
 # Historical publication-readiness review
 
-**Historical summary, updated under issue #20 on 2026-10-19.** This is not a fresh privacy/security audit or publication authorization. The original issue #8 report remains at Git commit `63065f203b526704a37c8f88d6d5e6ea3bc9b5dc`, at this path. Current specification text is [SWSS v2.0](../standards/SWSS/v2.0.md); historical draft statements are not its status.
+**Historical summary, updated under issue #20 on 2026-10-19.** This is not a fresh privacy/security audit or publication authorization. The original issue #8 report remains at Git commit `63065f203b526704a37c8f88d6d5e6ea3bc9b5dc`, at this path. Current specification text is [SWSS v3.0](../standards/SWSS/v3.0.md); historical draft statements are not its status.
 
 ## Preserved findings and limitations
 
